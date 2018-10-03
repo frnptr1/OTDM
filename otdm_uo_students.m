@@ -135,7 +135,7 @@ while norm(g) > eps && k < maxiter
         else 
             % evaluation of beta(Fletcher-Reeves)    
             beta_k = (norm(g)/norm(gk(:,k-1)))^2;
-            d = -g'+(beta_k*dk(k-1));            
+            d = -g'+(beta_k*dk(:,k-1));            
          end
     
     elseif sdm == 3  % CGM/PR conjugate method
@@ -151,7 +151,7 @@ while norm(g) > eps && k < maxiter
 
         else 
             % evaluation of beta(Fletcher-Reeves)    
-            beta_k = (g*(g-gk(:,k-1))')/(norm(gk(:,k-1)))^2;
+            beta_k = (g*(g'-gk(:,k-1)))/(norm(gk(:,k-1)))^2;
             d = -g'+(beta_k*dk(:,k-1));            
          end
         
