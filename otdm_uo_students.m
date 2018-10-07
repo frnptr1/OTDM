@@ -79,7 +79,9 @@ gk  = [];
 % objective function value in point x_k
 fk  = [];
 %bfgs
-bfgs = [;];
+Bbfgs = {};
+
+H = {};
 
 
 
@@ -107,7 +109,7 @@ iout_bls = 0;
 while norm(g) > eps && k < maxiter   
 
     if mod(k,100) == 0 
-        fprintf('[otdm_uo_optimize] k    f(xk)            ||gk||        min(lak)  alk        g1        g2      g3       g4\n');
+        fprintf('[otdm_uo_optimize] k    f(xk)            ||gk||        min(lak)  alk      x(1)      x(2)\n');
     end
     
     k = k + 1;
@@ -135,7 +137,7 @@ while norm(g) > eps && k < maxiter
         else 
             % evaluation of beta(Fletcher-Reeves)    
             beta_k = (norm(g)/norm(gk(:,k-1)))^2;
-            d = -g'+(beta_k*dk(k-1));            
+            d = -g'+(beta_k*dk(:,k-1));            
          end
     
     elseif sdm == 3  % CGM/PR conjugate method
@@ -151,43 +153,144 @@ while norm(g) > eps && k < maxiter
 
         else 
             % evaluation of beta(Fletcher-Reeves)    
-            beta_k = (g*(g-gk(:,k-1))')/(norm(gk(:,k-1)))^2;
+            beta_k = (g*(g'-gk(:,k-1)))/(norm(gk(:,k-1)))^2;
             d = -g'+(beta_k*dk(:,k-1));            
          end
         
     elseif sdm == 4  % QNM/BFGS quasi-newton           
  
-        % first iteration beta_0 is just the identity matrix        
-        if k == 1            
+        if k == 1
+            Bbfgs{k} = eye(n);
+            %celldisp(Bbfgs);
             d = -g';
-            bfgs = eye(2);
-        
         else
             
-            s_k = xk(k)-xk(k-1);
-            y_k = gk(k)'-gk(k-1)';
             
-            second_term = (bfgs*s_k*transpose(s_k)*bfgs)/(transpose(s_k)*bfgs*s_k);
-            third_term = (y_k*transpose(y_k))/(transpose(y_k)*s_k);
+            %SEMI WORKING IMPLEMENTATION
+            %{            
+            % delta X: (x(k) - x(k-1))'
+            X = (xk(:,k) - xk(:,k-1));
+            %fprintf("dimensioni x\n");
+            %disp(size(X));
+            % delta Y: G(k)'-G(k-1)'
+            Y = gk(:,k)' - gk(:,k-1)';
+            %fprintf("dimensioni y\n");
+            %disp(size(Y));
+            % third term
+            C = (Y*Y')/(Y*X');
+            % modified term following matlab implementation
+            % ||G(k-1)||/ (G(x)*X)
+            B = (gk(:,k-1)'*gk(:,k-1))/(X*gk(:,k-1));
+            % new bfgs matrix
+            bbfgs = Bbfgs{k-1} +B + C;
+            %}
+            
+            % CAROLINA IMPLEMENTATION
+            sk = xk(:,k) - xk(:,k-1);            
+            %{
+            %controllare dimensioni X
+            fprintf("dimensioni x\n");
+            disp(size(sk));
+            %}
+            
+            yk = gk(:,k)' - gk(:,k-1)';
+            %{      
+            %controllare dimensioni Y
+            fprintf("dimensioni y\n");
+            disp(size(yk));
+            %}
+            
+            bbfgs =  Bbfgs{k-1} -(Bbfgs{k-1})'*sk*transpose(sk)*Bbfgs{k-1}/(transpose(sk)*Bbfgs{k-1}*sk) + (yk*transpose(yk))/(yk*sk);
+            display(bbfgs);
+            Bbfgs = [Bbfgs, bbfgs];
+            
+            
+            
+            
+            % IMPLEMENTAZIONE B-1 NOT WORKING
+            %{
+            
+            % delta X: (x(k) - x(k-1))'
+            X = xk(:,k) - xk(:,k-1);
+
+            % delta Y: G(k)'-G(k-1)'
+            Y = gk(:,k) - gk(:,k-1);
+
+            % third term
+            C = ((Bbfgs{k-1}'*Y*X')+(X*Y'*Bbfgs{k-1}'))/(X'*Y);
+            %display(C);
+            % modified term following matlab implementation
+            % ||G(k-1)||/ (G(x)*X)
+            B = ((X'*Y)+ (Y'*Bbfgs{k-1}'*Y))/((X'*Y)^2);
+            %display(B);
+            % new bfgs matrix
+            bbfgs = Bbfgs{k-1}' +B - C;
+            %}
+            
+            if (sk'*yk')>0
+                fprintf("Curvature condition satisfied \n");
+            else
+                fprintf("CUrvature condition not satisfied \n");
+            end
+            
+            if bbfgs*sk==yk'
+                fprintf("Secant equation condition satisfied \n");
+            else
+                fprintf("Secant equation condition not satisfied \n");
+            end     
+                          
+            
+            %bbfgs = Bbfgs{k-1} - /(transpose(sk)*Bbfgs{k-1}*sk) + C
+            %fprintf("current");
+            %display(bbfgs);
+            %fprintf("previous\n");
+            %celldisp(Bbfgs);
+            
+            Bbfgs = [Bbfgs, bbfgs];
+            
+            d = -inv(Bbfgs{k-1})*gk(:,k);
+        end 
+      
+        
+    elseif sdm == 5  % QNM/DFP quasi-newton
+        
+        
+        if k == 1
+            H{k} = eye(n);
+            %celldisp(Bbfgs);
+            d = -g';
+            
+        else
+        
+            sk = (xk(:,k) - xk(:,k-1))';
+            yk = gk(:,k)' - gk(:,k-1)';
+            
+            
+            %controllare dimensioni X
+            fprintf("dimensioni x\n");
+            disp(size(sk));
+            
+            fprintf("dimensioni y\n");
+            disp(size(yk));
             
 
-            fprintf("bfgs");
-            display(bfgs);
-            fprintf("second term % transpose");
-            display(transpose(s_k));
-            fprintf("third term");
-            display(y_k);
-            bfgs = bfgs-second_term+third_term;
-            display(inv(bfgs));
-            
-            d = inv(bfgs)*-g';           
-            
-        end      
-            
-        %%%%%%%% implement here the quasi-newton method %%%%%%%%%
-    
-    elseif sdm == 5  % QNM/DFP quasi-newton
-        d = -g';
+            C = norm(sk)/(yk'*sk);
+
+            B = (H{k-1}*(yk*yk')*H{k-1})/(yk'*H{k-1}*yk);
+
+            h = H{k-1}-B+C;
+
+            H{k} = h;
+
+            d = -h*g';
+        end
+        
+        
+        
+        
+        
+        
+        
     elseif sdm == 6  % NM newton
         d = -g';
     elseif sdm == 7  % MNM-Luenberger
@@ -234,8 +337,7 @@ while norm(g) > eps && k < maxiter
     f   = f_fun(x);
     %
     
-    fprintf('[otdm_uo_optimize] %3d  %+10.8e  %8.6e  %+4.1e  %+4.1e  %+4.1e  %+4.1e %+4.1e \n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1), al, g(1), g(2), gk(k));
-    
+    fprintf('[otdm_uo_optimize] %3d  %+10.8e  %8.6e  %+4.1e  %+4.1e %7.3f %7.3f \n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1), al, x(1), x(2));
         
     if iout_bls == 1
         fprintf('[otdm_uo_optimize] Warning linesearch: too much iterations, strong Wolfe conditions not guarenteed, convergence compromised.\n');
