@@ -67,206 +67,92 @@ end
 fprintf('[otdm_uo_optimize] Initial solution:\n');
 fprintf('[otdm_uo_optimize]    x1=[ %7.3f, %7.3f]\n', x(1), x(2));
 fprintf('[otdm_uo_optimize] Optimizaton:\n')
-
-% points
+%
 xk  = [];
-% alpha steplength
 alk = [];
-% descent direction on iteration k
 dk  = [];
-% gradient on iteration/point k
 gk  = [];
-% objective function value in point x_k
 fk  = [];
-%bfgs
-Bbfgs = {};
-
-H = {};
-
-
-
-
-% length of the array/ # of coordinates of the point
+bk  = [];
+Bbfgs = [];
+sk = [];
+yk = [];
+bbfgs = [];
+%
 n = size(x,1);
 i = [1:n];
 k = 0;
-% eigenvalues of the hessian matrix 
 la = eig(h_fun(x));
-% gradient evaluated in point x_k
 g   = g_fun(x);
-% function value at point x
 f   = f_fun(x);
-% restart fr
-restart = 3;
 
-
-%flag for quadratic function
+%if f is quadratic
 if qof == 1
     Q=h_fun(x);
 end
 iout_bls = 0;
 %
-
-while norm(g) > eps && k < maxiter   
-
-    if mod(k,100) == 0 
-        fprintf('[otdm_uo_optimize] k    f(xk)            ||gk||        min(lak)  alk      x(1)      x(2)   method\n');
+while norm(g) > eps & k < maxiter
+    if mod(k,100) == 0
+        fprintf('[otdm_uo_optimize] k    f(xk)            ||gk||        min(lak)  alk\n');
     end
-    
     k = k + 1;
     xk = [xk,x];
     gk = [gk,g'];
     fk = [fk,f];
     la = eig(h_fun(xk(:,k)));
     d=zeros(n,1);
-    
-    %search direction method
     if sdm == 1  % GM
         d = -g';
-    
-    elseif sdm == 2   % CGM/FR conjugate gradient        
-        
-        % first mandatory iteration
+    elseif sdm == 2   % CGM/FR TODO
         if k == 1
-            d = -g';     
-         %zoutendijk condition, each 2*k iteration the direction is
-         %restared with the steepest descent method
-         %elseif k == restart 
-         %   restart = 2*k;
-         %   d = -g';    
-
-        else 
-            % evaluation of beta(Fletcher-Reeves)    
-            beta_k = (gk(:,k)'*gk(:,k)) / norm(gk(:,k-1)')^2;
-            d = -gk(:,k)+(beta_k*dk(:,k-1));            
-         end
-    
-    elseif sdm == 3  % CGM/PR conjugate method
-        
-        % first mandatory iteration
-        if k == 1
-            d = -g';     
-         %zoutendijk condition, each 2*k iteration the direction is
-         %restared with the steepest descent method
-         elseif k == restart 
-            restart = 2*k;
-            d = -g';    
-
-        else 
-            % evaluation of beta(Fletcher-Reeves)    
-            beta_k = (gk(:,k)'* (gk(:,k)'-gk(:,k-1)')') /(norm(gk(:,k-1)'))^2;
-            d = -gk(:,k)+(beta_k*dk(:,k-1));            
-         end
-        
-    elseif sdm == 4  % QNM/BFGS quasi-newton           
- 
-        if k == 1
-            
-            Bbfgs{k} = eye(n);
             d = -g';
-            
-            
-        else          
-            
-            % CAROLINA IMPLEMENTATION
-            sk = xk(:,k) - xk(:,k-1);            
-
-            
-            yk = gk(:,k) - gk(:,k-1);
-
-            
-            B = ((Bbfgs{k-1}*(sk*sk')*Bbfgs{k-1})/(sk'*Bbfgs{k-1}*sk));
-            
-            C = (yk*(yk)')/(yk'*sk);
-            
-            bbfgs =  Bbfgs{k-1} - B+ C;
-   
-            Bbfgs{k} = bbfgs;
-            
-            d = -inv(Bbfgs{k-1})*gk(:,k);         
-          
-            
-         end
-    
-      
-        
-    elseif sdm == 5  % QNM/DFP quasi-newton
-        
-        
-        if k == 1
-            H{k} = eye(n);
-            d = -g';            
         else
-        
-            sk = xk(:,k) - xk(:,k-1);              
-            yk = gk(:,k) - gk(:,k-1);
-           
-
-            C = (sk*sk')/(yk'*sk);
-
-            B = (H{k-1}*(yk*yk')*H{k-1})/(yk'*H{k-1}*yk);
-
-            h = H{k-1}-B+C;
-
-            H{k} = h;
-
-            d = -h*gk(:,k);
+            bk = (g*g')/(norm(gk(:,k-1))^2);
+            d = -g' + bk*dk(:,k-1);
         end
-        
-        
-        
-        
-        
-        
-        
-    elseif sdm == 6  % NM newton
-        
-        hessian_term = inv(h_fun(x));          
-        d = -hessian_term*gk(:,k);
-        
-        
-
-    elseif sdm == 7  % MNM-Luenberger
-       hessian_matrix = h_fun(x); 
-       [L,D] = ldl(hessian_matrix);
-       [~,n] = size(D);
-       DL=D+(deltaLuen-min(min(D)))*eye(n);
-       HL=L*DL*L';
-       d=-inv(HL)*g';
+    elseif sdm == 3  % CGM/PR
+        d = -g';
+    elseif sdm == 4  % QNM/BFGS TODO
+        if k == 1
+            Bbfgs = [Bbfgs, eye(n)];
+            display(Bbfgs);
+            d = -g';
+        else
+            sk = xk(:,k) - xk(:,k-1);
+            display(xk(:,k));           
+            yk = gk(:,k)' - gk(:,k-1)';
+            bbfgs = Bbfgs(:,[k-1,k]) - (Bbfgs(:,[k-1,k])'*sk*transpose(sk)*Bbfgs(:,[k-1,k]))/(transpose(sk)*Bbfgs(:,[k-1,k])*sk) + (yk*transpose(yk))/(yk*sk);
+            display(bbfgs);
+            Bbfgs = [Bbfgs, bbfgs];
+            
+            d = -Bbfgs(:,[k-1,k])^(-1)*gk(:,k);
+        end
+    elseif sdm == 5  % QNM/D
+        d = -g';
+    elseif sdm == 6  % MN TODO
+        d = -g';
+    elseif sdm == 7  % MNM-Luenberger TODO
+        d = -g';
     end
     % Descent direction condition:
     if g*d >=0
         dk=[dk,d];
         break
     end
-    
     % Linesearch
     if k == 1
         almax = 1;
     elseif sdm < 4 % GM, CGM and QNM
-        almax = 2*(fk(k)-fk(k-1))/(gk(:,k)'*d);        %NW (3.44) pag. 54
+        almax = almaxcoef*2*(fk(k)-fk(k-1))/(gk(:,k)'*d);        %NW (3.44) pag. 54
     else           % NM and MNM
         almax = min(1,almaxcoef*2*(fk(k)-fk(k-1))/(gk(:,k)'*d)); %NW (3.44) pag. 54
     end
     if qof == 1      % Quadratic o.f., exact linesearch
-
-%         [dim_d1, dim_d2] = size(d);
-%         [dim_Q1, dim_Q2] = size(Q);
-%         [dim_d11, dim_d21] = size(d');
-%         
-%         display([dim_g1, dim_g2]);
-%         display([dim_d1, dim_d2]);
-%         display([dim_Q1, dim_Q2]);
-%         display([);
-        
         al = -g*d/(d'*Q*d);
-        
-    else
-        % non-quadratic o.f., backtraking line-search with strong Wolfe cond.
+    else             % non-quadratic o.f., backtraking line-search with strong Wolfe cond.
         [al, iout_bls] = otdm_uo_backlinesearch(f_fun,g_fun,d,x,almax,c1,c2,maxiter_ls,eps_ls);
     end
-    %
-    
     % Step
     alk = [alk,al];
     dk  = [dk,d];
@@ -274,9 +160,7 @@ while norm(g) > eps && k < maxiter
     g   = g_fun(x);
     f   = f_fun(x);
     %
-    
-    fprintf('[otdm_uo_optimize] %3d  %+10.8e  %8.6e  %+4.1e  %+4.1e %7.5f %7.5f \n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1), al, x(1), x(2));
-        
+    fprintf('[otdm_uo_optimize] %3d  %+10.8e  %8.6e  %+4.1e  %+4.1e\n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1), al);
     if iout_bls == 1
         fprintf('[otdm_uo_optimize] Warning linesearch: too much iterations, strong Wolfe conditions not guarenteed, convergence compromised.\n');
     elseif iout_bls == 2
@@ -287,7 +171,6 @@ while norm(g) > eps && k < maxiter
         break
     end
 end
-
 if norm(g) <= eps
     iout = 0;
     k = k+1;
@@ -298,7 +181,6 @@ if norm(g) <= eps
     fprintf('[otdm_uo_optimize] %3d  %+10.8e  %8.6e  %+4.1e \n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1));
     fprintf('[otdm_uo_optimize] Optimal solution within tolerance:\n');
     fprintf('[otdm_uo_optimize]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
-
 elseif gk(:,k)'*dk(:,k) >= 0
     iout = 2;
     fprintf('[otdm_uo_optimize] %3d  %+10.8e  %8.6e\n', k, f_fun(xk(:,k)), norm(gk(:,k)));
