@@ -1,2 +1,8 @@
  r tr_p tr_seed    la     w1(1)     w1(2)     w1(3) ls  c2    sdm iout iter     w*(1)     w*(2)     w*(3)        L* tr_acc te_acc   te_q te_seed
 21  500 1234566 0.100 +0.00e+00 +0.00e+00 +0.00e+00  1 0.5     GM    3    2 -1.08e+00 -1.10e+00 -1.08e+00 1.678e+02   51.8   49.7  50000 7891016 
+ r tr_p tr_seed    la     w1(1)     w1(2)     w1(3) ls  c2    sdm iout iter     w*(1)     w*(2)     w*(3)        L* tr_acc te_acc   te_q te_seed
+21  500 1234566 0.100 +0.00e+00 +0.00e+00 +0.00e+00  1 0.5     GM    0    3 +0.00e+00 +0.00e+00 +0.00e+00 2.410e+02   51.8   51.8  50000 7891016 
+ r tr_p tr_seed    la     w1(1)     w1(2)     w1(3) ls  c2    sdm iout iter     w*(1)     w*(2)     w*(3)        L* tr_acc te_acc   te_q te_seed
+21  500 1234566 0.100 +0.00e+00 +0.00e+00 +0.00e+00  1 0.5 CGM-FR    0    3 +0.00e+00 +0.00e+00 +0.00e+00 2.410e+02   51.8   51.8  50000 7891016 
+ r tr_p tr_seed    la     w1(1)     w1(2)     w1(3) ls  c2    sdm iout iter     w*(1)     w*(2)     w*(3)        L* tr_acc te_acc   te_q te_seed
+21  500 1234566 0.100 +0.00e+00 +0.00e+00 +0.00e+00  1 0.5 CGM-PR    0    3 +0.00e+00 +0.00e+00 +0.00e+00 2.410e+02   51.8   51.8  50000 7891016 

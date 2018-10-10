@@ -11,7 +11,7 @@ fprintf('[otdm_uo_nn] ::::::::::::::::::::::::::::::::::::::::::::::::\n')
 %
 % Training data set
 %
-rule=21;
+rule=2;
 training_seed = 123456;
 rng(training_seed);
 p_training=500;
@@ -26,26 +26,13 @@ fprintf('[otdm_uo_nn]    training_seed  = %i\n', training_seed)
 %
 
 
-la = .1;
+la = 0;
 fprintf('[otdm_uo_nn]    L2 reg. lambda = %f\n', la)
 
-% ACTIVATION FUNCTION
-activation = @(x) (1+exp(-x)).^(-1);
-
 % OUTPUT LAYER
-%y_func = @(x,w)  (1+exp(-sum(activation(x).*w))).^(-1);
-y_func = @(x,w)  activation(activation(x)'*w)';
 
-% LOSS FUNCTION REGULARIZED WITH LAMBDA
-f = @(w) sum((y_func(xtr, w) - ytr).^2) + (la/2)*sum(w.^2);
-    
-
-% GRADIENT OF THE OB1jECTIVE FUNCTION
-if n==2
-    g = @(w) [ sum(2*(y_func(xtr,w) - ytr) * (y_func(xtr,w) - y_func(xtr,w).^2)' * activation( xtr(1,:) ) + la*w(1)), sum(2*(y_func(xtr,w) - ytr) * (y_func(xtr,w) - y_func(xtr,w).^2)' * activation( xtr(2,:) ) + la*w(2))];
-elseif n==3
-    g = @(w) [ sum(2*(y_func(xtr,w) - ytr) * (y_func(xtr,w) - y_func(xtr,w).^2)' * activation( xtr(1,:) ) + la*w(1)), sum(2*(y_func(xtr,w) - ytr) * (y_func(xtr,w) - y_func(xtr,w).^2)' * activation( xtr(2,:) ) + la*w(2)), sum(2*(y_func(xtr,w) - ytr) * (y_func(xtr,w) - y_func(xtr,w).^2)' * activation( xtr(3,:) ) + la*w(3))];
-end
+f = @(w) L(w);
+g = @(w) gL(w);
 
 % HESSIAN OF THE OB1jECTIVE FUNCTION
 h = @(w) eye(n);
@@ -54,8 +41,8 @@ h = @(w) eye(n);
 options=zeros(1,20);
 w1 = zeros(n,1);
 %w1 = w1';
-options( 2) = 1000;
-options(10) = 1;
+options(2) = 10;
+options(10) = 4;
 options(20) = 1;
 
 if n==2
@@ -66,22 +53,18 @@ end
 
 [wo, xk, alk, dk, gk, fk, iout, options] = otdm_uo_students_new(f, g, h, w1, options);
 
-
-
-
-
 %
 % Plot
 %
 if n==2
-    xylim = [-50,50,-50,50];
+    xylim = [-10,10,-10,10];
     otdm_uo_plot(f, xk, gk, xylim);
 end
 
 %
 % Training accuracy
 %
-training_accuracy= otdm_uo_accuracy(xtr,ytr,wo, y_func);
+training_accuracy= otdm_uo_accuracy(wo);
 fprintf('[otdm_uo_nn] training_accuracy = %4.1f\n', training_accuracy)
 
 %
@@ -94,7 +77,7 @@ rng(test_seed);
 %
 % Test accuracy
 %
-test_accuracy= otdm_uo_accuracy(xte,yte,wo, y_func);
+test_accuracy= otdm_uo_accuracy(wo);
 fprintf('[otdm_uo_nn]            p_test = %i\n', p_test)
 fprintf('[otdm_uo_nn]         test_seed = %i\n', test_seed)
 fprintf('[otdm_uo_nn]     test_accuracy = %4.1f\n', test_accuracy)

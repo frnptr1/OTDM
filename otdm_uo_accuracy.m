@@ -1,11 +1,10 @@
 % Procedure otdm_uo_accuracy %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function accuracy = otdm_uo_accuracy(xtr,ytr,wo, y_func) 
-p = size(ytr,2);
-model_response = round(y_func(xtr, wo));
+function accuracy = otdm_uo_accuracy(wo) 
+global xtr ytr p;
 accuracy = 0;
 for i=1:p
-    if ytr(i)==model_response(i)
+    if ytr(i)==round(y_func(xtr(:,i),wo))
         accuracy = accuracy+1;
     end
 end
