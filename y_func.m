@@ -1,4 +1,4 @@
-function [sum] = y_func(x,w)
+function sum = y_func(x,w)
     global n;
     sum = 0;
     for i = 1:n

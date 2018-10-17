@@ -93,6 +93,7 @@ k = 0;
 la = eig(h_fun(x));
 f  = f_fun(x);
 g  = g_fun(x);
+restart = n;
 if qof == 1
     Q=h_fun(x);
 end
@@ -120,14 +121,16 @@ while norm(g) > eps && k < maxiter
             d = -g';     
          %zoutendijk condition, each 2*k iteration the direction is
          %restared with the steepest descent method
-         %elseif k == restart 
-         %   restart = 2*k;
-         %   d = -g';    
+         elseif mod(k,n)==0 
+            %restart = 2*k;
+            d = -g';    
 
         else 
             % evaluation of beta(Fletcher-Reeves)    
-            beta_k = (gk(:,k)'*gk(:,k)) / norm(gk(:,k-1)')^2;
-            d = -gk(:,k)+(beta_k*dk(:,k-1));            
+            %beta_k = (gk(:,k)'*gk(:,k)) / norm(gk(:,k-1)')^2;
+            beta_k = (g*g') / norm(gk(:,k-1)')^2;
+            %d = -gk(:,k)+(beta_k*dk(:,k-1));
+            d = -g'+(beta_k*dk(:,k-1));
         end
          
     elseif sdm == 3  % CGM/PR
@@ -137,9 +140,9 @@ while norm(g) > eps && k < maxiter
             d = -g';     
          %zoutendijk condition, each 2*k iteration the direction is
          %restared with the steepest descent method
-         %elseif k == restart 
-         %   restart = 2*k;
-         %   d = -g';    
+         elseif mod(k,n)==0
+            %restart = 2*k;
+            d = -g';    
 
         else 
             % evaluation of beta(Fletcher-Reeves)    
@@ -170,7 +173,7 @@ while norm(g) > eps && k < maxiter
             % adding the matrix just created in the cell array
             Bbfgs{k} = bbfgs;
             % evaluating the search direction
-            d = -inv(Bbfgs{k-1})*gk(:,k);
+            d = -inv(bbfgs)*gk(:,k);
         end
 
     elseif sdm == 5  % QNM/DFP
@@ -255,15 +258,29 @@ if norm(g) <= eps
     fk = [fk,f];
     gk = [gk,g'];
     la = eig(h_fun(xk(:,k)));
-    fprintf('[otdm_uo_solve] %5i  %+10.8e  %8.6e  %+4.1e \n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1));
-    fprintf('[otdm_uo_solve] Optimal solution within tolerance:\n');
-    fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
+    fprintf('[otdm_uo_solve] %5i  %+10.8e  %8.6e  %+4.1e \n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1));    
+    if n==2
+        fprintf('[otdm_uo_solve] Optimal solution within tolerance:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
+    elseif n==3
+        fprintf('[otdm_uo_solve] Optimal solution within tolerance:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f, %7.3f].\n', x(1), x(2), x(3));
+    end
+
+
 elseif gk(:,k)'*dk(:,k) >= 0
     iout = 2;
     fprintf('[otdm_uo_solve] %5i  %+10.8e  %8.6e\n', k, f_fun(xk(:,k)), norm(gk(:,k)));
     fprintf('[otdm_uo_solve] FAILURE: dk is not a descent direction: gk·dk = %+4.1e, convergence lost.\n', gk(:,k)'*dk(:,k) )
-    fprintf('[otdm_uo_solve] Last iterate:\n');
-    fprintf('[otdm_uo_solve]    xk=[ %7.3f, %7.3f].\n', x(1), x(2));   
+    if n==2
+        fprintf('[otdm_uo_solve] Last iterate:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
+    elseif n==3
+        fprintf('[otdm_uo_solve] Last iterate:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f, %7.3f].\n', x(1), x(2), x(3));
+    end
+    
+ 
 elseif k == maxiter 
     iout = 1;
     k = k+1;
@@ -273,8 +290,15 @@ elseif k == maxiter
     la = eig(h_fun(xk(:,k)));
     fprintf('[otdm_uo_solve] %5i  %+10.8e  %8.6e  %+4.1e\n', k, f_fun(xk(:,k)), norm(gk(:,k)), la(1));
     fprintf('[otdm_uo_solve] maxiter = %3d exceeded.\n', maxiter)
-    fprintf('[otdm_uo_solve] Last iterate:\n');
-    fprintf('[otdm_uo_solve]    xk=[ %7.3f, %7.3f].\n', x(1), x(2));   
+    if n==2
+        fprintf('[otdm_uo_solve] Last iterate:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
+    elseif n==3
+        fprintf('[otdm_uo_solve] Last iterate:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f, %7.3f].\n', x(1), x(2), x(3));
+    end
+    
+   
 elseif iout == 3
     k = k+1;
     xk = [xk,x];
@@ -282,7 +306,12 @@ elseif iout == 3
     gk = [gk,g'];
     fprintf('[otdm_uo_solve] %5i  %+10.8e  %8.6e\n', k+1, f_fun(xk(:,k)), norm(gk(:,k)));
     fprintf('[otdm_uo_solve] Linesearch failure: dk descent direction but fk+1 > fk.\n')
-    fprintf('[otdm_uo_solve] Last iterate:\n');
-    fprintf('[otdm_uo_solve]    xk=[ %7.3f, %7.3f].\n', x(1), x(2));
+    if n==2
+        fprintf('[otdm_uo_solve] Last iterate:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
+    elseif n==3
+        fprintf('[otdm_uo_solve] Last iterate:\n');
+        fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f, %7.3f].\n', x(1), x(2), x(3));
+    end
 end
 % End procedure otdm_uo_solve %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

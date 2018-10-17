@@ -1,2 +1,0 @@
- r tr_p tr_seed    la     w1(1)     w1(2) ls  c2    sdm iout iter     w*(1)     w*(2)        L* tr_acc te_acc   te_q te_seed
- 2  500 1234566 0.000 +0.00e+00 +0.00e+00  1 0.5   BFGS    0    7 -4.40e-03 -4.40e-03 1.250e+02   50.4   50.4  50000 7891016 

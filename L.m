@@ -4,7 +4,7 @@ function result = L(w)
     for j = 1:p
         result = result + (y_func(xtr(:,j),w) - ytr(j))^2;
         
-        if (p <= n)
+        if (j <= n)
             result = result + (la/2)*w(j)^2;
         end
     end
