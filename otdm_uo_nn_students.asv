@@ -11,7 +11,7 @@ fprintf('[otdm_uo_nn] ::::::::::::::::::::::::::::::::::::::::::::::::\n')
 %
 % TRAINING DATASET
 %
-rule=32;
+rule=3;
 training_seed = 123456;
 rng(training_seed);
 p_training=500;

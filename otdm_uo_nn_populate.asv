@@ -68,7 +68,6 @@ if rule == 32
         if xtr(2,j)+xtr(1,j) >0
             ytr(j) = 1;
         end
-        xtr(3,j) = xtr(2,j)+xtr(1,j);
     end
 end
 
