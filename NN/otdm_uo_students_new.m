@@ -19,7 +19,7 @@ function [x, xk, alk, dk, gk, fk, iout, options] = otdm_uo_solve(f_fun, g_fun, h
 % options( 9) = output frequancy..
 % options(10) = 1 -> Gradient.
 %               2 -> Conjugate Gradient, Fletcher-Reeves update.
-%               3 -> Conjugate Gradient, Polak-Ribière update.
+%               3 -> Conjugate Gradient, Polak-RibiÃ¨re update.
 %               4 -> Quasi-Newton, DFP.
 %               5 -> Quasi-Newton, BFGS.
 %               6 -> Newton.
@@ -65,7 +65,7 @@ if     (options(10)==1)
 elseif (options(10)==2)
     fprintf('[otdm_uo_solve]    CGM/Fletcher-Reeves   : options(10) = 2\n')
 elseif (options(10)==3)
-    fprintf('[otdm_uo_solve]    CGM/Polak-Ribière     : options(10) = 3\n')
+    fprintf('[otdm_uo_solve]    CGM/Polak-RibiÃ¨re     : options(10) = 3\n')
 elseif (options(10)==4)
     fprintf('[otdm_uo_solve]    QNM/BFGS              : options(10) = 4\n')
 elseif (options(10)==5)
@@ -271,7 +271,7 @@ if norm(g) <= eps
 elseif gk(:,k)'*dk(:,k) >= 0
     iout = 2;
     fprintf('[otdm_uo_solve] %5i  %+10.8e  %8.6e\n', k, f_fun(xk(:,k)), norm(gk(:,k)));
-    fprintf('[otdm_uo_solve] FAILURE: dk is not a descent direction: gk·dk = %+4.1e, convergence lost.\n', gk(:,k)'*dk(:,k) )
+    fprintf('[otdm_uo_solve] FAILURE: dk is not a descent direction: gkÂ·dk = %+4.1e, convergence lost.\n', gk(:,k)'*dk(:,k) )
     if n==2
         fprintf('[otdm_uo_solve] Last iterate:\n');
         fprintf('[otdm_uo_solve]    x*=[ %7.3f, %7.3f].\n', x(1), x(2));
